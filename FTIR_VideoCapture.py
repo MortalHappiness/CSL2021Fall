@@ -1,23 +1,49 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import random
+from collections import Counter
+from process_raw import process_raw
 
 # Choose webcam: 0, 1, ...
 # cap = cv2.VideoCapture(0)
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 
 text = ""
+fcount = 255
 
 pts = np.zeros(shape=(0, 1, 2), dtype=np.int32)
-LEAVE_TIMEOUT = 50
-ENTER_TIMEOUT = 30
+LEAVE_TIMEOUT = 20 # initial : 50
+ENTER_TIMEOUT = 15 # initial : 30
 DISPLAY_TIMEOUT = 50
 leave_timeout = 0
 enter_timeout = 0
 display_timeout = 0
 
+# Read processed references and initialize variables for predicition
+k = 5
+
+with open("trainfile", 'r') as f :
+	train = np.array([[x for x in line.split()] for line in f]).astype(float)
+label = np.empty(255, dtype=int)
+for i in range(1, 6) : # should be 1, 10
+	label[(i - 1) * 51:i * 51] = int(i)
+
 def predict(img, points):
-	return 8
+	# return 8
+
+	# k nearest neighbors
+	processed = process_raw(points.reshape((-1, 2)).tolist())
+	x = np.array(processed).astype(float)
+	# euclidean distance
+	distances = np.linalg.norm(train - x, axis=1)
+	# nearest neighbot indices
+	nearest_neighbors = distances.argsort()[:k]
+	# majority vote
+	pred, _ = Counter(label[nearest_neighbors]).most_common()[0]
+	#pred = 0
+	return pred
+
 
 while(True):
 	# Capture one frame from the camera
@@ -51,7 +77,7 @@ while(True):
 	for cnt in contour: 
 		area = cv2.contourArea(cnt)
 		M = cv2.moments(cnt)
-		if M['m00'] != 0 and area > 7000:
+		if M['m00'] != 0 and area > 5500: # initial : 7000
 			x, y = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
 
 	if x is not None and y is not None:
@@ -71,6 +97,25 @@ while(True):
 		leave_timeout -= 1
 		cv2.polylines(Display, [pts], False, (255, 255, 0), 4)
 	elif pts.shape != (0, 1, 2):
+		# Save images and pts
+		save = False
+		if save:
+			#img
+			fcount += 1
+			fname = f"./images/img_{fcount}.png"
+			blank = np.zeros((680, 480, 3), dtype=np.uint8)
+			blank.fill(255)
+			outframe = cv2.polylines(blank, [pts], False, (0, 0, 0), 4)
+			cv2.imwrite(fname, outframe)
+			#pts
+			fname = f"./points/pts_{fcount}"
+			fpts = pts.reshape((-1, 2))
+			with open(fname, 'w') as f:
+				for item in fpts : 
+					for coord in item :
+						f.write(f"{coord} ")
+					f.write("\n")
+
 		# Predict number
 		text = str(predict(Display, pts))
 		pts = np.zeros(shape=(0, 1, 2), dtype=np.int32)
