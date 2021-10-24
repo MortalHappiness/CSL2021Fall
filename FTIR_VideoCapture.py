@@ -7,10 +7,10 @@ from process_raw import process_raw
 
 # Choose webcam: 0, 1, ...
 # cap = cv2.VideoCapture(0)
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
 text = ""
-fcount = 255
+fcount = 507
 
 pts = np.zeros(shape=(0, 1, 2), dtype=np.int32)
 LEAVE_TIMEOUT = 20 # initial : 50
@@ -25,12 +25,16 @@ k = 5
 
 with open("trainfile", 'r') as f :
 	train = np.array([[x for x in line.split()] for line in f]).astype(float)
-label = np.empty(255, dtype=int)
-for i in range(1, 6) : # should be 1, 10
-	label[(i - 1) * 51:i * 51] = int(i)
+label = np.empty(510, dtype=int)
+for i in range(10) : # should be [0, 10)
+	label[i * 51:(i+1) * 51] = int(i)
 
 def predict(img, points):
-	# return 8
+
+	# disable prediction for save mode
+	disable = False
+	if disable :
+		return -1
 
 	# k nearest neighbors
 	processed = process_raw(points.reshape((-1, 2)).tolist())
@@ -71,6 +75,8 @@ while(True):
 	## for debug
 	Display = cv2.cvtColor(Display, cv2.COLOR_GRAY2BGR)
 	cv2.drawContours(Display, contour, -1, (0, 0, 255))
+	## for displaying original image
+	Display = frame
 
 	# Iterate through each contours, check area and find center
 	x, y = None, None
@@ -84,8 +90,10 @@ while(True):
 		leave_timeout = LEAVE_TIMEOUT
 		display_timeout = 0
 		enter_timeout += 1
-		cv2.putText(Display, f"{area}", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255))
+		# cv2.putText(Display, f"{area}", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255))
+		cv2.putText(Display, f"({x}, {y})", (x+25, y-25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), thickness=2)
 		cv2.circle(Display, (x, y), radius=10, color=(0, 0, 255), thickness=-1)
+		cv2.circle(Display, (x, y), radius=35, color=(0, 0, 255), thickness=2)
 
 		if enter_timeout >= ENTER_TIMEOUT:
 			if pts.shape[0] == 0 or not (pts[-1, 0, 0] == x and pts[-1, 0, 1] == y):
@@ -97,7 +105,7 @@ while(True):
 		leave_timeout -= 1
 		cv2.polylines(Display, [pts], False, (255, 255, 0), 4)
 	elif pts.shape != (0, 1, 2):
-		# Save images and pts
+		# Save images and pts for training
 		save = False
 		if save:
 			#img

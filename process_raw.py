@@ -49,7 +49,7 @@ def process_raw(plist) :
 
 # Process raw training files
 trainlist = []
-for i in range(1, 6) : # should be 1, 10
+for i in range(10) : # should be [0, 10)
     pdir = f"./points/{i}"
     for fname in listdir(pdir) :
         # print(fname)
