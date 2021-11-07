@@ -74,6 +74,7 @@ MPU6050 mpu;
 
 
 #define INTERRUPT_PIN D5  // use pin D5 on nodeMCU
+#define button D6
 #define LED_PIN 13 // (Arduino is 13, Teensy is 11, Teensy++ is 6)
 bool blinkState = false;
 
@@ -127,6 +128,8 @@ WiFiServer server(80);
 // Setup
 //===============================================
 void setup() {
+    // button setup
+    pinMode(button, INPUT);
     // join I2C bus (I2Cdev library doesn't do this automatically)
     #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
         Wire.begin();
@@ -245,6 +248,8 @@ void loop() {
             Serial.println(data);
             data = "";
         }
+        // check button
+        bool b = digitalRead(button);
 
         // wait for MPU interrupt or extra packet(s) available
         while (!mpuInterrupt && fifoCount < packetSize) {
@@ -295,6 +300,9 @@ void loop() {
             digitalWrite(LED_PIN, blinkState);
         }
 
+        // print button state
+        client.print(b);
+
         #ifdef OUTPUT_READABLE_QUATERNION
             // display quaternion values in easy matrix form: w x y z
             mpu.dmpGetQuaternion(&q, fifoBuffer);
@@ -325,7 +333,7 @@ void loop() {
             mpu.dmpGetQuaternion(&q, fifoBuffer);
             mpu.dmpGetGravity(&gravity, &q);
             mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-            client.print("ypr ");
+            client.print(" ypr ");
             client.print(ypr[0] * 180/M_PI);
             client.print(" ");
             client.print(ypr[1] * 180/M_PI);
@@ -377,6 +385,7 @@ void loop() {
             teapotPacket[11]++; // packetCount, loops at 0xFF on purpose
         #endif
         delay(20);
+        //}
     }
     client.stop();
     Serial.println("Client disconnected");
