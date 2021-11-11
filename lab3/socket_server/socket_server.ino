@@ -301,19 +301,26 @@ void loop() {
         }
 
         // print button state
-        client.print(b);
+        // client.print(b);
+        // client.print(" ");
 
         #ifdef OUTPUT_READABLE_QUATERNION
             // display quaternion values in easy matrix form: w x y z
             mpu.dmpGetQuaternion(&q, fifoBuffer);
-            client.print("quat\t");
+            
+            // string for client print
+            char str[40];
+            sprintf(str, "%d %f %f %f %f\n", b, q.w, q.x, q.y, q.z);
+
+            /*
             client.print(q.w);
-            client.print("\t");
+            client.print(" ");
             client.print(q.x);
-            client.print("\t");
+            client.print(" ");
             client.print(q.y);
-            client.print("\t");
+            client.print(" ");
             client.println(q.z);
+            */
         #endif
 
         #ifdef OUTPUT_READABLE_EULER
