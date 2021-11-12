@@ -311,7 +311,7 @@ void loop() {
             // string for client print
             char str[40];
             sprintf(str, "%d %f %f %f %f\n", b, q.w, q.x, q.y, q.z);
-
+            client.print(str);
             /*
             client.print(q.w);
             client.print(" ");
