@@ -301,18 +301,14 @@ void loop() {
         }
 
         // print button state
-        // client.print(b);
-        // client.print(" ");
+        client.print(b);
+        client.print(" ");
 
         #ifdef OUTPUT_READABLE_QUATERNION
             // display quaternion values in easy matrix form: w x y z
             mpu.dmpGetQuaternion(&q, fifoBuffer);
             
             // string for client print
-            char str[40];
-            sprintf(str, "%d %f %f %f %f\n", b, q.w, q.x, q.y, q.z);
-            client.print(str);
-            /*
             client.print(q.w);
             client.print(" ");
             client.print(q.x);
@@ -320,7 +316,7 @@ void loop() {
             client.print(q.y);
             client.print(" ");
             client.println(q.z);
-            */
+            
         #endif
 
         #ifdef OUTPUT_READABLE_EULER
@@ -391,8 +387,7 @@ void loop() {
             client.write(teapotPacket, 14);
             teapotPacket[11]++; // packetCount, loops at 0xFF on purpose
         #endif
-        delay(20);
-        //}
+        //delay(20);
     }
     client.stop();
     Serial.println("Client disconnected");

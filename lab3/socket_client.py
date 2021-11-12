@@ -10,7 +10,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 	while True:
 		try:
 			data = s.recv(1024)
-			print('Received', repr(data))
+			print(data.split(b"\r\n")[0])
+			# print('Received', repr(data))
 		except KeyboardInterrupt:
 			exit()
 		except:

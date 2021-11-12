@@ -17,6 +17,9 @@ public class SocketClient
     public bool isTrigger;
     public float x, y, z, w;
 
+    private bool inited = false;
+    private float x_init, y_init, z_init;
+
     public SocketClient(string hostIP, int port) {
         thread = new Thread(() => {
             // while the status is "Disconnect", this loop will keep trying to connect.
@@ -35,31 +38,32 @@ public class SocketClient
                         }
                         int length = socketClient.Receive(data);
                         string message = Encoding.UTF8.GetString(data, 0, length);
-                        //Debug.Log("Recieve message: " + message);
-                        // */
-                        char[] seps = {' '};
-                        string[] quatString = message.Split(seps);
-                        //Debug.Log("Received element # :" + quatString.Length);
-                        /*for(int i = 0; i < quatString.Length; i++){
-                            Debug.Log(quatString[i]);
-                        }*/
-                        if(quatString.Length % 5 != 0){
-                            Debug.Log("Failed to parse message");
-                            continue;
-                        }
-                        else{
-                            int i = 0;
-                            while(i < quatString.Length){
-                                isTrigger = (Convert.ToDecimal(quatString[i++]) == 1)? true : false;
-                                w = Convert.ToSingle(quatString[i++]);
-                                x = Convert.ToSingle(quatString[i++]);
-                                y = Convert.ToSingle(quatString[i++]);
-                                z = Convert.ToSingle(quatString[i++]);
+                        // Debug.Log("Recieve message: " + message);
 
-                            }
+                        char[] seps = {'\r', '\n'};
+                        string[] quatStrings = message.Split(seps);
+                        if (quatStrings.Length < 1) continue;
+                        string[] quaternion = quatStrings[0].Split(' ');
+                        if (quaternion.Length != 5) continue;
+                        isTrigger = quaternion[0].CompareTo("1") == 0;
+                        float _w = Convert.ToSingle(quaternion[1]);
+                        float _x = Convert.ToSingle(quaternion[2]);
+                        float _y = Convert.ToSingle(quaternion[3]);
+                        float _z = Convert.ToSingle(quaternion[4]);
+                        // w = _w;
+                        // x = _x;
+                        // y = _y;
+                        // z = _z;
+                        if (!inited) {
+                            x_init = _y;
+                            y_init = -_z;
+                            z_init = -_x;
+                            inited = true;
                         }
-                        isTrigger = false;
-                        x = y = z = w = 0;
+                        w = _w;
+                        x = _y - x_init;
+                        y = -_z - y_init;
+                        z = -_x - z_init;
                     }
                 } catch (Exception ex) {
                     if (socketClient != null) {
