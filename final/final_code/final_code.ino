@@ -13,7 +13,6 @@
 #define ir_left A2
 #define ir_center A3
 #define ir_right A4
-int left_state, center_state, right_state;
 
 
 /***** Servo Motor *****/
@@ -35,9 +34,18 @@ int servo_output = 0;
 // OUT1 & OUT2 -> DC Motor
 
 int dc_dir = 1;
-int dc_output = 0;
+int dc_output = 180;
 
+/***** Custom global variables *****/
+int DELAY = 500;
+enum Mode {
+  STRAIGHT,
+  S_SHAPED,
+  SENSOR
+};
 int timer = 0;
+// Mode mode = STRAIGHT;
+Mode mode = S_SHAPED;
 
 
 void setup() {
@@ -62,45 +70,65 @@ void setup() {
 }
 
 void loop() {
+  int ir_left_val, ir_center_val, ir_right_val;
   /* Read IR Sensor value */
-  //Serial.println(analogRead(ir_sensor));
-  /*
-  Serial.println(left_state = analogRead(ir_left));
-  Serial.println(center_state = analogRead(ir_center));
-  Serial.println(right_state = analogRead(ir_right));
-  Serial.println();
-  */
-  /*
-  if((left_state > 800 || left_state < 100) && (right_state < 800 && right_state > 100)){
-    // turn right
-    if(servo_output <= 130) servo_output += 5;
-    myservo.write(servo_output);
-  }
+  ir_left_val = analogRead(ir_left);
+  ir_center_val = analogRead(ir_center);
+  ir_right_val = analogRead(ir_right);
 
-  if((left_state < 800 && left_state > 100) && (right_state > 800 || right_state << 100)){
-    // turn left
-    if(servo_output >= 50) servo_output -= 5;
-    myservo.write(servo_output);
+  switch (mode) {
+    case STRAIGHT:
+      forward();
+      break;
+    case S_SHAPED:
+      int interval = 2000;
+      if (timer >= 4 * interval) {
+        timer = 0;
+      }
+      if (timer < interval) {
+        forward();
+      } else if (timer < 2 * interval) {
+        turn_left();
+      } else if (timer < 3 * interval) {
+        forward();
+      } else {
+        turn_right();
+      }
+      break;
+    case SENSOR:
+      Serial.println(ir_left_val);
+      Serial.println(ir_center_val);
+      Serial.println(ir_right_val);
+      Serial.println();
+      break;
+    default:
+      break;
   }
-  */
 
   /* Rotate servo motor according to the input (degree) */
-  //myservo.write((servo_output += 10) % 180);
-  //myservo.write(((servo_output += 10) % 120) + 30);
-  if(timer > 2000 && timer <= 5000){
-    myservo.write(servo_output = 70);
-  }
-  else{
-    myservo.write(servo_output = 91);
-  }
-  if(timer > 5000) timer = 0;
+  myservo.write(servo_output);
+
   /* Set DC motor direction and power */
   setDirection(dc_dir);
-  //analogWrite(ENA, (dc_output += 63) % 255);
-  analogWrite(ENA,  150);
+  analogWrite(ENA,  dc_output);
 
-  timer += 500;
-  delay(500);
+  timer += DELAY;
+  delay(DELAY);
+}
+
+void forward() {
+  servo_output = 91;
+  dc_output = 180;
+}
+
+void turn_left() {
+  servo_output = 70;
+  dc_output = 200;
+}
+
+void turn_right() {
+  servo_output = 115;
+  dc_output = 200;
 }
 
 void setDirection(int dir) {
