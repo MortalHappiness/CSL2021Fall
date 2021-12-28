@@ -37,15 +37,23 @@ int dc_dir = 1;
 int dc_output = 180;
 
 /***** Custom global variables *****/
-int DELAY = 500;
 enum Mode {
   STRAIGHT,
   S_SHAPED,
-  SENSOR
+  SENSOR,
 };
+enum Color {
+  WHITE,
+  BLACK,
+  GRAY,
+};
+
+int DELAY = 500;
 int timer = 0;
+
 // Mode mode = STRAIGHT;
-Mode mode = S_SHAPED;
+// Mode mode = S_SHAPED;
+Mode mode = SENSOR;
 
 
 void setup() {
@@ -100,6 +108,20 @@ void loop() {
       Serial.println(ir_center_val);
       Serial.println(ir_right_val);
       Serial.println();
+
+      Color left_color, center_color, right_color;
+      left_color = value_to_color(ir_left_val);
+      center_color = value_to_color(ir_center_val);
+      right_color = value_to_color(ir_right_val);
+      if (center_color != GRAY) {
+        forward();
+      } else if (left_color != GRAY) {
+        turn_left();
+      } else if (right_color != GRAY) {
+        turn_right();
+      } else {
+        stop();
+      }
       break;
     default:
       break;
@@ -131,6 +153,11 @@ void turn_right() {
   dc_output = 200;
 }
 
+void stop() {
+  servo_output = 91;
+  dc_output = 0;
+}
+
 void setDirection(int dir) {
   if (dir == 0) {
     digitalWrite(IN1, HIGH);
@@ -139,4 +166,10 @@ void setDirection(int dir) {
     digitalWrite(IN1, LOW);
     digitalWrite(IN2, HIGH);
   }
+}
+
+Color value_to_color(int val) {
+  if (val < 200) return WHITE;
+  if (val < 600) return GRAY;
+  return BLACK;
 }
