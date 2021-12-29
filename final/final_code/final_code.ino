@@ -10,9 +10,9 @@
 // #define ir_sensor A2 // A0 pin
 // Vcc -> 5V
 // GND -> GND
-#define ir_left A2
+#define ir_left A4
 #define ir_center A3
-#define ir_right A4
+#define ir_right A2
 
 
 /***** Servo Motor *****/
@@ -22,7 +22,7 @@
 
 #include <Servo.h>
 Servo myservo;
-int servo_output = 0;
+int servo_output = 91;
 
 
 /***** DC Motor (L298N) *****/
@@ -46,14 +46,21 @@ enum Color {
   WHITE,
   BLACK,
   GRAY,
+  INIT,
 };
 
 int DELAY = 500;
 int timer = 0;
 
 // Mode mode = STRAIGHT;
-// Mode mode = S_SHAPED;
+//Mode mode = S_SHAPED;
 Mode mode = SENSOR;
+
+
+/* Record number of flips to pause */
+int flips = 0;
+int pause_timer = 6000;
+Color last_center_color = INIT;
 
 
 void setup() {
@@ -85,10 +92,49 @@ void loop() {
   ir_right_val = analogRead(ir_right);
 
   switch (mode) {
+    case SENSOR:
+      Serial.println(ir_left_val);
+      Serial.println(ir_center_val);
+      Serial.println(ir_right_val);
+      Serial.println(flips);
+      Serial.println(pause_timer);
+      Serial.println();
+
+      Color left_color, center_color, right_color;
+      left_color = value_to_color(ir_left_val);
+      center_color = value_to_color(ir_center_val);
+      right_color = value_to_color(ir_right_val);
+
+      if ((last_center_color != INIT) && (center_color != last_center_color)) {
+        flips++;
+      }
+      last_center_color = center_color;
+
+      if (flips >= 20){
+        flips = 0;
+        stop();
+        pause_timer = DELAY;
+      }
+      else if (pause_timer < 6000){
+        stop();
+        pause_timer += DELAY;
+      } else if (center_color != GRAY) {
+        forward();
+      } else if (left_color != GRAY) {
+        turn_left();
+      } else if (right_color != GRAY) {
+        turn_right();
+      //} else if (center_color != GRAY) {
+        //forward();
+      } else {
+        stop();
+      }
+      break;
     case STRAIGHT:
       forward();
       break;
     case S_SHAPED:
+      Serial.println(timer);
       int interval = 2000;
       if (timer >= 4 * interval) {
         timer = 0;
@@ -101,26 +147,6 @@ void loop() {
         forward();
       } else {
         turn_right();
-      }
-      break;
-    case SENSOR:
-      Serial.println(ir_left_val);
-      Serial.println(ir_center_val);
-      Serial.println(ir_right_val);
-      Serial.println();
-
-      Color left_color, center_color, right_color;
-      left_color = value_to_color(ir_left_val);
-      center_color = value_to_color(ir_center_val);
-      right_color = value_to_color(ir_right_val);
-      if (center_color != GRAY) {
-        forward();
-      } else if (left_color != GRAY) {
-        turn_left();
-      } else if (right_color != GRAY) {
-        turn_right();
-      } else {
-        stop();
       }
       break;
     default:
@@ -144,18 +170,22 @@ void forward() {
 }
 
 void turn_left() {
-  servo_output = 70;
+  servo_output = 76;
   dc_output = 200;
 }
 
 void turn_right() {
-  servo_output = 115;
+  servo_output = 106;
   dc_output = 200;
 }
 
 void stop() {
-  servo_output = 91;
+  //servo_output = 91;
   dc_output = 0;
+}
+
+void kickstart() {
+  
 }
 
 void setDirection(int dir) {
@@ -169,7 +199,7 @@ void setDirection(int dir) {
 }
 
 Color value_to_color(int val) {
-  if (val < 200) return WHITE;
+  if (val < 100) return WHITE;
   if (val < 600) return GRAY;
   return BLACK;
 }
