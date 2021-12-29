@@ -22,9 +22,9 @@
 
 #include <Servo.h>
 Servo myservo;
-#define SERVO_LEFT 76
+#define SERVO_LEFT 81
 #define SERVO_CENTER 91
-#define SERVO_RIGHT 106
+#define SERVO_RIGHT 101
 int servo_output = SERVO_CENTER;
 
 
@@ -36,8 +36,8 @@ int servo_output = SERVO_CENTER;
 // GND -> GND
 // OUT1 & OUT2 -> DC Motor
 
-#define DC_NORMAL 180
-#define DC_HIGH 200
+#define DC_NORMAL 170
+#define DC_HIGH 190
 #define DIR_FORWARD 1
 #define DIR_BACKWARD 0
 int dc_dir = DIR_FORWARD;
@@ -61,7 +61,7 @@ enum Color {
 #define NO_STOP
 #define STOP_TIME 3000
 
-int DELAY = 500;
+int DELAY = 100;
 int timer = 0;
 
 // Mode mode = STRAIGHT;
