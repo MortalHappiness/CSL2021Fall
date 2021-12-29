@@ -10,9 +10,9 @@
 // #define ir_sensor A2 // A0 pin
 // Vcc -> 5V
 // GND -> GND
-#define ir_left A4
+#define ir_left A2
 #define ir_center A3
-#define ir_right A2
+#define ir_right A4
 
 
 /***** Servo Motor *****/
@@ -22,7 +22,10 @@
 
 #include <Servo.h>
 Servo myservo;
-int servo_output = 91;
+#define SERVO_LEFT 76
+#define SERVO_CENTER 91
+#define SERVO_RIGHT 106
+int servo_output = SERVO_CENTER;
 
 
 /***** DC Motor (L298N) *****/
@@ -33,8 +36,12 @@ int servo_output = 91;
 // GND -> GND
 // OUT1 & OUT2 -> DC Motor
 
-int dc_dir = 1;
-int dc_output = 180;
+#define DC_NORMAL 180
+#define DC_HIGH 200
+#define DIR_FORWARD 1
+#define DIR_BACKWARD 0
+int dc_dir = DIR_FORWARD;
+int dc_output = DC_NORMAL;
 
 /***** Custom global variables *****/
 enum Mode {
@@ -46,21 +53,26 @@ enum Color {
   WHITE,
   BLACK,
   GRAY,
-  INIT,
 };
+
+// Print debug message
+#define DEBUG
+// Do not stop for debuging
+#define NO_STOP
+#define STOP_TIME 3000
 
 int DELAY = 500;
 int timer = 0;
 
 // Mode mode = STRAIGHT;
-//Mode mode = S_SHAPED;
+// Mode mode = S_SHAPED;
 Mode mode = SENSOR;
 
 
 /* Record number of flips to pause */
-int flips = 0;
-int pause_timer = 6000;
-Color last_center_color = INIT;
+int color_flips = 0;
+int pause_timer = STOP_TIME;
+Color last_center_color = GRAY;
 
 
 void setup() {
@@ -93,30 +105,38 @@ void loop() {
 
   switch (mode) {
     case SENSOR:
+#ifdef DEBUG
+      Serial.print("ir_left_val = ");
       Serial.println(ir_left_val);
+      Serial.print("ir_center_val = ");
       Serial.println(ir_center_val);
+      Serial.print("ir_right_val = ");
       Serial.println(ir_right_val);
-      Serial.println(flips);
+      Serial.print("color_flips = ");
+      Serial.println(color_flips);
+      Serial.print("pause_timer = ");
       Serial.println(pause_timer);
       Serial.println();
+#endif
 
       Color left_color, center_color, right_color;
       left_color = value_to_color(ir_left_val);
       center_color = value_to_color(ir_center_val);
       right_color = value_to_color(ir_right_val);
 
-      if ((last_center_color != INIT) && (center_color != last_center_color)) {
-        flips++;
-      }
+      if (center_color != last_center_color) color_flips++;
       last_center_color = center_color;
 
-      if (flips >= 20){
-        flips = 0;
+      if (color_flips >= 20){
+        color_flips = 0;
+#ifndef NO_STOP
         stop();
+#endif
         pause_timer = DELAY;
-      }
-      else if (pause_timer < 6000){
+      } else if (pause_timer < STOP_TIME){
+#ifndef NO_STOP
         stop();
+#endif
         pause_timer += DELAY;
       } else if (center_color != GRAY) {
         forward();
@@ -124,11 +144,10 @@ void loop() {
         turn_left();
       } else if (right_color != GRAY) {
         turn_right();
-      //} else if (center_color != GRAY) {
-        //forward();
       } else {
         stop();
       }
+
       break;
     case STRAIGHT:
       forward();
@@ -165,34 +184,32 @@ void loop() {
 }
 
 void forward() {
-  servo_output = 91;
-  dc_output = 180;
+  servo_output = SERVO_CENTER;
+  dc_output = DC_NORMAL;
 }
 
 void turn_left() {
-  servo_output = 76;
-  dc_output = 200;
+  servo_output = SERVO_LEFT;
+  dc_output = DC_HIGH;
 }
 
 void turn_right() {
-  servo_output = 106;
-  dc_output = 200;
+  servo_output = SERVO_RIGHT;
+  dc_output = DC_HIGH;
 }
 
 void stop() {
-  //servo_output = 91;
   dc_output = 0;
 }
 
 void kickstart() {
-  
 }
 
 void setDirection(int dir) {
-  if (dir == 0) {
+  if (dir == DIR_BACKWARD) {
     digitalWrite(IN1, HIGH);
     digitalWrite(IN2, LOW);
-  } else if (dir == 1) {
+  } else if (dir == DIR_FORWARD) {
     digitalWrite(IN1, LOW);
     digitalWrite(IN2, HIGH);
   }
